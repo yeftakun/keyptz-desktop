@@ -23,6 +23,6 @@ Saat aplikasi berjalan, gunakan icon tray untuk membuka menu `Config`, `GitHub`,
 ## File Data
 
 - `config.json`
-- `profile/*.json`
+- `profiles/*.json`
 
-Kedua lokasi ini berada di folder output aplikasi (`AppContext.BaseDirectory`).
+Kedua lokasi ini berada di folder `%LOCALAPPDATA%\\keyPTZ-desktop`.

@@ -290,7 +290,7 @@ public sealed class AppPaths
     {
         BaseDirectory = baseDirectory;
         ConfigPath = Path.Combine(BaseDirectory, "config.json");
-        ProfileDirectory = Path.Combine(BaseDirectory, "profile");
+        ProfileDirectory = Path.Combine(BaseDirectory, "profiles");
     }
 
     public string BaseDirectory { get; }

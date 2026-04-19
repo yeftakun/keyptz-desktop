@@ -158,8 +158,36 @@ public sealed class ConfigEditorForm : Form
         panel.Controls.Add(new Label { Text = "Boost Multiplier (contoh 1.5):", AutoSize = true }, 0, 4);
         panel.Controls.Add(_multiplier, 1, 4);
 
+        var openDataButton = new Button { Text = "Data", Width = 96, Height = 32, Anchor = AnchorStyles.Left };
+        ApplyButtonStyle(openDataButton);
+        openDataButton.Click += (_, _) => OpenDataFolder();
+
+        panel.Controls.Add(new Label { Text = "Data Folder:", AutoSize = true }, 0, 5);
+        panel.Controls.Add(openDataButton, 1, 5);
+
         tab.Controls.Add(panel);
         return tab;
+    }
+
+    private void OpenDataFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(_paths.BaseDirectory);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = _paths.BaseDirectory,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Tidak bisa membuka folder data.\n{_paths.BaseDirectory}\n\nDetail: {ex.Message}",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     private TabPage CreateButtonsTab()
