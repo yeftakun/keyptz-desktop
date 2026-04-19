@@ -17,6 +17,10 @@ dotnet build
 cd bin\Debug\net8.0-windows
 dotnet Key2Xbox.Rewrite.dll
 ```
+## Release
+```powershell
+dotnet publish Key2Xbox.Rewrite.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=false /p:PublishTrimmed=false /p:DebugType=None /p:DebugSymbols=false -o release/win-x64-small-safe
+```
 
 Saat aplikasi berjalan, gunakan icon tray untuk membuka menu `Config`, `GitHub`, atau `Exit`.
 

@@ -1,0 +1,58 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0/win-x64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {},
+    ".NETCoreApp,Version=v8.0/win-x64": {
+      "keyPTZ-desktop/1.1.0": {
+        "dependencies": {
+          "Nefarius.ViGEm.Client": "1.21.256",
+          "Newtonsoft.Json": "13.0.4"
+        },
+        "runtime": {
+          "keyPTZ-desktop.dll": {}
+        }
+      },
+      "Nefarius.ViGEm.Client/1.21.256": {
+        "runtime": {
+          "lib/netstandard2.0/Nefarius.ViGEm.Client.dll": {
+            "assemblyVersion": "1.21.256.0",
+            "fileVersion": "1.21.256.0"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.4": {
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.4.30916"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "keyPTZ-desktop/1.1.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Nefarius.ViGEm.Client/1.21.256": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VJMO6hkalOZ7YdXTwcR881aTgPZlN7thEs3x6CWE/kEu7SdE5bY7QuDXkR2eqXfPAee4NrxInIAqa45PorpTsA==",
+      "path": "nefarius.vigem.client/1.21.256",
+      "hashPath": "nefarius.vigem.client.1.21.256.nupkg.sha512"
+    },
+    "Newtonsoft.Json/13.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A==",
+      "path": "newtonsoft.json/13.0.4",
+      "hashPath": "newtonsoft.json.13.0.4.nupkg.sha512"
+    }
+  }
+}
