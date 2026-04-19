@@ -8,6 +8,7 @@ public sealed class ControllerService : IDisposable
 {
     private readonly ConfigStore _configStore;
     private readonly AppPaths _paths;
+    private readonly GlobalKeyBlocker _keyBlocker;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _lock = new();
     private Thread? _thread;
@@ -52,10 +53,11 @@ public sealed class ControllerService : IDisposable
         ["Y"] = 0x8000
     };
 
-    public ControllerService(ConfigStore configStore, AppPaths paths)
+    public ControllerService(ConfigStore configStore, AppPaths paths, GlobalKeyBlocker keyBlocker)
     {
         _configStore = configStore;
         _paths = paths;
+        _keyBlocker = keyBlocker;
     }
 
     public void Start()
@@ -96,6 +98,7 @@ public sealed class ControllerService : IDisposable
 
             var lastModified = File.GetLastWriteTimeUtc(_paths.ConfigPath);
             var config = _configStore.Load();
+            _keyBlocker.SetBlockedKeys(KeyboardInput.GetConfiguredKeys(config));
 
             var latchedButtons = new HashSet<Xbox360Button>();
             short latchedLx = 0, latchedLy = 0, latchedRx = 0, latchedRy = 0;
@@ -110,6 +113,7 @@ public sealed class ControllerService : IDisposable
                     {
                         Thread.Sleep(50);
                         config = _configStore.Load();
+                        _keyBlocker.SetBlockedKeys(KeyboardInput.GetConfiguredKeys(config));
                         lastModified = changed;
                     }
                 }
@@ -121,6 +125,7 @@ public sealed class ControllerService : IDisposable
                 var modifierPressed = string.IsNullOrWhiteSpace(config.ModifierKey) || KeyboardInput.IsPressed(config.ModifierKey);
                 var boostPressed = KeyboardInput.IsPressed(config.BoostKey);
                 var keyboardActive = modifierPressed || boostPressed;
+                _keyBlocker.SetEnabled(keyboardActive);
                 var boostMultiplier = config.BoostMultiplier <= 0 ? 1.0 : config.BoostMultiplier;
 
                 var physical = GetPhysicalGamepadState(newSlot);
@@ -209,6 +214,8 @@ public sealed class ControllerService : IDisposable
         }
         finally
         {
+            _keyBlocker.SetEnabled(false);
+
             lock (_lock)
             {
                 if (_controller is not null)

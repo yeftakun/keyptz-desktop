@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>keyPTZ-desktop</AssemblyName>
+
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

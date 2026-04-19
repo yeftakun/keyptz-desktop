@@ -5,6 +5,37 @@ namespace Key2Xbox.Rewrite;
 public static class KeyboardInput
 {
     private static readonly Dictionary<string, Keys> NameToKey = BuildMap();
+    private static Func<Keys, bool>? _keyStateProvider;
+
+    public static void SetKeyStateProvider(Func<Keys, bool>? provider)
+    {
+        _keyStateProvider = provider;
+    }
+
+    public static IReadOnlyCollection<Keys> GetConfiguredKeys(AppConfig config)
+    {
+        var keys = new HashSet<Keys>();
+
+        foreach (var binding in config.Buttons.Values)
+        {
+            AddKeys(keys, binding);
+        }
+
+        foreach (var binding in config.Joysticks.Values)
+        {
+            AddKeys(keys, binding?.Keys);
+        }
+
+        foreach (var binding in config.Triggers.Values)
+        {
+            AddKeys(keys, binding?.Keys);
+        }
+
+        AddKeys(keys, config.ModifierKey);
+        AddKeys(keys, config.BoostKey);
+
+        return keys;
+    }
 
     public static bool IsPressed(string? keyText)
     {
@@ -58,8 +89,28 @@ public static class KeyboardInput
         };
     }
 
-    private static IEnumerable<Keys> ParseKeys(string keyText)
+    public static IReadOnlyCollection<Keys> ParseConfiguredKeys(string? keyText)
     {
+        return ParseKeys(keyText).Distinct().ToArray();
+    }
+
+    public static IReadOnlyCollection<Keys> ParseConfiguredKeys(IEnumerable<string>? keyTexts)
+    {
+        if (keyTexts is null)
+        {
+            return Array.Empty<Keys>();
+        }
+
+        return keyTexts.SelectMany(ParseKeys).Distinct().ToArray();
+    }
+
+    private static IEnumerable<Keys> ParseKeys(string? keyText)
+    {
+        if (string.IsNullOrWhiteSpace(keyText))
+        {
+            yield break;
+        }
+
         foreach (var token in keyText.Split(','))
         {
             var normalized = token.Trim().ToLowerInvariant();
@@ -105,8 +156,35 @@ public static class KeyboardInput
 
     private static bool IsPressed(Keys key)
     {
+        var provider = _keyStateProvider;
+        if (provider is not null)
+        {
+            return provider(key);
+        }
+
         var state = NativeMethods.GetAsyncKeyState((int)key);
         return (state & 0x8000) != 0;
+    }
+
+    private static void AddKeys(HashSet<Keys> keys, string? keyText)
+    {
+        foreach (var key in ParseKeys(keyText))
+        {
+            keys.Add(key);
+        }
+    }
+
+    private static void AddKeys(HashSet<Keys> keys, IEnumerable<string>? keyTexts)
+    {
+        if (keyTexts is null)
+        {
+            return;
+        }
+
+        foreach (var key in ParseConfiguredKeys(keyTexts))
+        {
+            keys.Add(key);
+        }
     }
 
     private static Dictionary<string, Keys> BuildMap()

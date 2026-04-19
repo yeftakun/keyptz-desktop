@@ -7,6 +7,7 @@ namespace Key2Xbox.Rewrite;
 public sealed class TrayApplicationContext : ApplicationContext
 {
     private readonly NotifyIcon _trayIcon;
+    private readonly GlobalKeyBlocker _keyBlocker;
     private readonly ControllerService _controllerService;
     private readonly ConfigStore _store;
     private readonly AppPaths _paths;
@@ -17,7 +18,10 @@ public sealed class TrayApplicationContext : ApplicationContext
     {
         _paths = paths;
         _store = new ConfigStore(_paths);
-        _controllerService = new ControllerService(_store, _paths);
+        _keyBlocker = new GlobalKeyBlocker();
+        _keyBlocker.Start();
+        KeyboardInput.SetKeyStateProvider(_keyBlocker.IsKeyPressed);
+        _controllerService = new ControllerService(_store, _paths, _keyBlocker);
 
         _trayIcon = new NotifyIcon
         {
@@ -75,6 +79,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     protected override void ExitThreadCore()
     {
         _controllerService.Dispose();
+        KeyboardInput.SetKeyStateProvider(null);
+        _keyBlocker.Dispose();
         base.ExitThreadCore();
     }
 

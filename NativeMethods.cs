@@ -4,8 +4,36 @@ namespace Key2Xbox.Rewrite;
 
 internal static class NativeMethods
 {
+    internal const int WhKeyboardLl = 13;
+    internal const int WmKeyDown = 0x0100;
+    internal const int WmKeyUp = 0x0101;
+    internal const int WmSysKeyDown = 0x0104;
+    internal const int WmSysKeyUp = 0x0105;
+
     [DllImport("user32.dll")]
     internal static extern short GetAsyncKeyState(int vKey);
+
+    internal delegate nint LowLevelKeyboardProc(int nCode, nint wParam, nint lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern nint SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, nint hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool UnhookWindowsHookEx(nint hhk);
+
+    [DllImport("user32.dll")]
+    internal static extern nint CallNextHookEx(nint hhk, int nCode, nint wParam, nint lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct KbdLlHookStruct
+    {
+        public uint VkCode;
+        public uint ScanCode;
+        public uint Flags;
+        public uint Time;
+        public nint DwExtraInfo;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct XInputGamepad
