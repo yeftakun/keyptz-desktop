@@ -240,47 +240,184 @@ public sealed class ConfigEditorForm : Form
     private TabPage CreateProfilesTab()
     {
         var tab = new TabPage("Profiles");
-        var panel = new TableLayoutPanel
+
+        var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             Padding = new Padding(10),
-            RowCount = 8,
+            RowCount = 5,
             ColumnCount = 1
         };
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        var loadDefault = new Button { Text = "Load Default Profile (Reset)", Dock = DockStyle.Top };
+        var loadDefault = new Button
+        {
+            Text = "Load Default Profile (Reset)",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            Padding = new Padding(8, 4, 8, 4),
+            BackColor = Color.AliceBlue
+        };
         loadDefault.Click += (_, _) =>
         {
             ApplyConfigToControls(AppConfig.CreateDefault());
             MessageBox.Show("Default profile telah dimuat ke editor. Klik Save & Apply untuk mengaktifkan.", "Dimuat", MessageBoxButtons.OK, MessageBoxIcon.Information);
         };
 
-        var refresh = new Button { Text = "Refresh Profile List", Dock = DockStyle.Top };
+        var resetArea = new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = loadDefault.Height + 8,
+            Padding = new Padding(0, 0, 0, 4)
+        };
+        resetArea.Controls.Add(loadDefault);
+
+        var refresh = new Button
+        {
+            Text = "Refresh Profile List",
+            AutoSize = true,
+            Anchor = AnchorStyles.Right,
+            Padding = new Padding(8, 4, 8, 4)
+        };
         refresh.Click += (_, _) => RefreshProfiles();
 
-        var loadSelected = new Button { Text = "Load Selected Profile to Editor", Dock = DockStyle.Top };
+        var availableProfilesLabel = new Label
+        {
+            Text = "Available Profiles:",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Anchor = AnchorStyles.Left
+        };
+
+        var listHeader = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 4)
+        };
+        listHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        listHeader.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        listHeader.Controls.Add(availableProfilesLabel, 0, 0);
+        listHeader.Controls.Add(refresh, 1, 0);
+
+        _profiles.Dock = DockStyle.Fill;
+        _profiles.IntegralHeight = false;
+        _profiles.ScrollAlwaysVisible = true;
+
+        var profileListHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(0, 4, 0, 4)
+        };
+        profileListHost.Controls.Add(_profiles);
+
+        var loadSelected = new Button
+        {
+            Text = "Load Selected Profile to Editor",
+            Dock = DockStyle.Top,
+            Height = 34,
+            Margin = new Padding(0, 6, 0, 0)
+        };
         loadSelected.Click += (_, _) => LoadSelectedProfile();
 
-        var deleteSelected = new Button { Text = "Delete Selected Profile", Dock = DockStyle.Top };
+        var deleteSelected = new Button
+        {
+            Text = "Delete Selected Profile",
+            Dock = DockStyle.Top,
+            Height = 34,
+            Margin = new Padding(0, 8, 0, 0),
+            BackColor = Color.MistyRose,
+            ForeColor = Color.DarkRed
+        };
         deleteSelected.Click += (_, _) => DeleteSelectedProfile();
 
-        var saveNew = new Button { Text = "Save As New Profile", Dock = DockStyle.Top };
+        var actionButtons = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 2,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 4)
+        };
+        actionButtons.Controls.Add(loadSelected, 0, 0);
+        actionButtons.Controls.Add(deleteSelected, 0, 1);
+
+        var managementArea = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Margin = new Padding(0)
+        };
+        managementArea.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        managementArea.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        managementArea.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        managementArea.Controls.Add(listHeader, 0, 0);
+        managementArea.Controls.Add(profileListHost, 0, 1);
+        managementArea.Controls.Add(actionButtons, 0, 2);
+
+        var saveNew = new Button
+        {
+            Text = "Save As New Profile",
+            AutoSize = true,
+            Anchor = AnchorStyles.Right,
+            Padding = new Padding(10, 4, 10, 4)
+        };
         saveNew.Click += (_, _) => SaveAsNewProfile();
 
-        panel.Controls.Add(loadDefault, 0, 0);
-        panel.Controls.Add(refresh, 0, 1);
-        panel.Controls.Add(new Label { Text = "Available Profiles:", AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold) }, 0, 2);
-        panel.Controls.Add(_profiles, 0, 3);
-        panel.Controls.Add(loadSelected, 0, 4);
-        panel.Controls.Add(deleteSelected, 0, 5);
-        panel.Controls.Add(new Label { Text = "Save Current Editor as New Profile:", AutoSize = true }, 0, 6);
-        panel.Controls.Add(_newProfileName, 0, 7);
-        panel.Controls.Add(saveNew, 0, 8);
+        _newProfileName.Dock = DockStyle.Fill;
 
-        tab.Controls.Add(panel);
+        var saveInputRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+            Margin = new Padding(0, 4, 0, 0)
+        };
+        saveInputRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        saveInputRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        saveInputRow.Controls.Add(_newProfileName, 0, 0);
+        saveInputRow.Controls.Add(saveNew, 1, 0);
+
+        var saveArea = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 2,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        saveArea.Controls.Add(new Label { Text = "Save Current Editor as New Profile:", AutoSize = true }, 0, 0);
+        saveArea.Controls.Add(saveInputRow, 0, 1);
+
+        root.Controls.Add(resetArea, 0, 0);
+        root.Controls.Add(CreateSeparator(), 0, 1);
+        root.Controls.Add(managementArea, 0, 2);
+        root.Controls.Add(CreateSeparator(), 0, 3);
+        root.Controls.Add(saveArea, 0, 4);
+
+        tab.Controls.Add(root);
 
         RefreshProfiles();
         return tab;
+    }
+
+    private static Control CreateSeparator()
+    {
+        return new Panel
+        {
+            Height = 1,
+            Dock = DockStyle.Top,
+            BackColor = Color.Gainsboro,
+            Margin = new Padding(0, 8, 0, 8)
+        };
     }
 
     private Control WrapCaptureButtons(TextBox box)
