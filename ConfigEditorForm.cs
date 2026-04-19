@@ -433,11 +433,18 @@ public sealed class ConfigEditorForm : Form
 
     private static void ApplyButtonStyle(Button button)
     {
+        var wasAutoSize = button.AutoSize;
         button.AutoSize = false;
         button.Height = Math.Max(button.Height, 32);
-        if (button.Width <= 0)
+
+        var preferredWidth = button.PreferredSize.Width + 18;
+        if (wasAutoSize)
         {
-            button.Width = Math.Max(button.PreferredSize.Width + 18, 86);
+            button.Width = Math.Max(preferredWidth, 86);
+        }
+        else if (button.Width <= 0)
+        {
+            button.Width = Math.Max(preferredWidth, 86);
         }
 
         button.Padding = new Padding(8, 4, 8, 4);
