@@ -1,6 +1,6 @@
 #define MyAppName "keyPTZ-desktop"
 #define MyAppVersion "1.1.0"
-#define MyAppPublisher "keyPTZ"
+#define MyAppPublisher "Yeftakun"
 #define MyAppExeName "keyPTZ-desktop.exe"
 #define MySourceDir "release\win-x64-small-safe"
 #define MyAppDataDir "{localappdata}\keyPTZ-desktop"
