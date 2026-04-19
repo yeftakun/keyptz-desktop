@@ -29,8 +29,8 @@ public sealed class ConfigEditorForm : Form
         AutoSize = true
     };
 
-    private readonly ListBox _profiles = new() { Height = 180 };
-    private readonly TextBox _newProfileName = new();
+    private readonly ListBox _profiles = new() { Height = 220, IntegralHeight = false };
+    private readonly TextBox _newProfileName = new() { PlaceholderText = "Ketik nama profile baru..." };
 
     private TextBox? _captureTarget;
     private string _captureOld = string.Empty;
@@ -57,11 +57,13 @@ public sealed class ConfigEditorForm : Form
         _config = _store.EnsureAndLoad();
 
         Text = "KeyPTZ - Config & Profile Editor";
-        Width = 700;
-        Height = 760;
+        Width = 760;
+        Height = 820;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         MinimizeBox = false;
+        AutoScaleMode = AutoScaleMode.Dpi;
+        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         TopMost = true;
         StartPosition = FormStartPosition.CenterScreen;
         KeyPreview = true;
@@ -107,10 +109,14 @@ public sealed class ConfigEditorForm : Form
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
             AutoSize = true,
-            WrapContents = false
+            WrapContents = false,
+            Padding = new Padding(0, 6, 0, 0)
         };
 
         var saveButton = new Button { Text = "Save & Apply (Active Config)", Width = 220, Height = 32 };
+        ApplyButtonStyle(saveButton);
+        saveButton.Width = 240;
+        saveButton.Height = 36;
         saveButton.Click += (_, _) => SaveAndClose();
         buttonPanel.Controls.Add(saveButton);
 
@@ -132,7 +138,7 @@ public sealed class ConfigEditorForm : Form
             AutoSize = true
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 330));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         panel.Controls.Add(_holdControl, 0, 0);
@@ -141,13 +147,13 @@ public sealed class ConfigEditorForm : Form
         panel.Controls.Add(new Label { Text = "Key Blocking:", AutoSize = true }, 0, 1);
         panel.Controls.Add(_keyBlocking, 1, 1);
 
-        panel.Controls.Add(new Label { Text = "Modifier (Kopling) Key:", AutoSize = true }, 0, 2);
+        panel.Controls.Add(new Label { Text = "Modifier Key (Kopling):", AutoSize = true }, 0, 2);
         panel.Controls.Add(WrapCaptureButtons(_modifier), 1, 2);
 
-        panel.Controls.Add(new Label { Text = "Boost (Turbo) Key:", AutoSize = true }, 0, 3);
+        panel.Controls.Add(new Label { Text = "Boost Key (Turbo):", AutoSize = true }, 0, 3);
         panel.Controls.Add(WrapCaptureButtons(_boost), 1, 3);
 
-        panel.Controls.Add(new Label { Text = "Boost Multiplier (e.g. 1.5):", AutoSize = true }, 0, 4);
+        panel.Controls.Add(new Label { Text = "Boost Multiplier (contoh 1.5):", AutoSize = true }, 0, 4);
         panel.Controls.Add(_multiplier, 1, 4);
 
         tab.Controls.Add(panel);
@@ -166,7 +172,7 @@ public sealed class ConfigEditorForm : Form
         };
 
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 290));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 360));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         var row = 0;
@@ -200,7 +206,7 @@ public sealed class ConfigEditorForm : Form
         };
 
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 330));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 390));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         panel.Controls.Add(new Label { Text = "AXIS / TRIGGER", Font = new Font("Segoe UI", 9, FontStyle.Bold), AutoSize = true }, 0, 0);
@@ -262,6 +268,7 @@ public sealed class ConfigEditorForm : Form
             Padding = new Padding(8, 4, 8, 4),
             BackColor = Color.AliceBlue
         };
+        ApplyButtonStyle(loadDefault);
         loadDefault.Click += (_, _) =>
         {
             ApplyConfigToControls(AppConfig.CreateDefault());
@@ -283,6 +290,7 @@ public sealed class ConfigEditorForm : Form
             Anchor = AnchorStyles.Right,
             Padding = new Padding(8, 4, 8, 4)
         };
+        ApplyButtonStyle(refresh);
         refresh.Click += (_, _) => RefreshProfiles();
 
         var availableProfilesLabel = new Label
@@ -324,6 +332,7 @@ public sealed class ConfigEditorForm : Form
             Height = 34,
             Margin = new Padding(0, 6, 0, 0)
         };
+        ApplyButtonStyle(loadSelected);
         loadSelected.Click += (_, _) => LoadSelectedProfile();
 
         var deleteSelected = new Button
@@ -335,6 +344,7 @@ public sealed class ConfigEditorForm : Form
             BackColor = Color.MistyRose,
             ForeColor = Color.DarkRed
         };
+        ApplyButtonStyle(deleteSelected);
         deleteSelected.Click += (_, _) => DeleteSelectedProfile();
 
         var actionButtons = new TableLayoutPanel
@@ -369,6 +379,7 @@ public sealed class ConfigEditorForm : Form
             Anchor = AnchorStyles.Right,
             Padding = new Padding(10, 4, 10, 4)
         };
+        ApplyButtonStyle(saveNew);
         saveNew.Click += (_, _) => SaveAsNewProfile();
 
         _newProfileName.Dock = DockStyle.Fill;
@@ -420,22 +431,38 @@ public sealed class ConfigEditorForm : Form
         };
     }
 
+    private static void ApplyButtonStyle(Button button)
+    {
+        button.AutoSize = false;
+        button.Height = Math.Max(button.Height, 32);
+        if (button.Width <= 0)
+        {
+            button.Width = Math.Max(button.PreferredSize.Width + 18, 86);
+        }
+
+        button.Padding = new Padding(8, 4, 8, 4);
+        button.TextAlign = ContentAlignment.MiddleCenter;
+    }
+
     private Control WrapCaptureButtons(TextBox box)
     {
         var panel = new FlowLayoutPanel
         {
             AutoSize = true,
             FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false
+            WrapContents = false,
+            Margin = new Padding(0, 2, 0, 2)
         };
 
-        var insert = new Button { Text = "Insert", Width = 60 };
+        var insert = new Button { Text = "Insert", Width = 74, Height = 32, Margin = new Padding(6, 0, 0, 0) };
+        ApplyButtonStyle(insert);
         insert.Click += (_, _) => BeginCapture(box);
 
         panel.Controls.Add(box);
         panel.Controls.Add(insert);
 
-        var clear = new Button { Text = "X", Width = 30 };
+        var clear = new Button { Text = "X", Width = 34, Height = 32, Margin = new Padding(4, 0, 0, 0) };
+        ApplyButtonStyle(clear);
         clear.Click += (_, _) =>
         {
             box.Text = string.Empty;
