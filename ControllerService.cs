@@ -125,7 +125,13 @@ public sealed class ControllerService : IDisposable
                 var modifierPressed = string.IsNullOrWhiteSpace(config.ModifierKey) || KeyboardInput.IsPressed(config.ModifierKey);
                 var boostPressed = KeyboardInput.IsPressed(config.BoostKey);
                 var keyboardActive = modifierPressed || boostPressed;
-                _keyBlocker.SetEnabled(keyboardActive);
+                var blockEnabled = config.KeyBlocking switch
+                {
+                    AppConfig.KeyBlockingAlways => true,
+                    AppConfig.KeyBlockingWhenModifierActive => modifierPressed,
+                    _ => false
+                };
+                _keyBlocker.SetEnabled(blockEnabled);
                 var boostMultiplier = config.BoostMultiplier <= 0 ? 1.0 : config.BoostMultiplier;
 
                 var physical = GetPhysicalGamepadState(newSlot);

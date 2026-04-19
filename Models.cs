@@ -4,8 +4,15 @@ namespace Key2Xbox.Rewrite;
 
 public sealed class AppConfig
 {
+    public const string KeyBlockingAlways = "always";
+    public const string KeyBlockingWhenModifierActive = "when_modifier_active";
+    public const string KeyBlockingDisabled = "disabled";
+
     [JsonProperty("hold_control")]
     public bool HoldControl { get; set; }
+
+    [JsonProperty("key_blocking")]
+    public string KeyBlocking { get; set; } = KeyBlockingWhenModifierActive;
 
     [JsonProperty("modifier_key")]
     public string ModifierKey { get; set; } = "numpad0";
@@ -30,6 +37,7 @@ public sealed class AppConfig
         return new AppConfig
         {
             HoldControl = false,
+            KeyBlocking = KeyBlockingWhenModifierActive,
             ModifierKey = "numpad0",
             BoostKey = "numpad1",
             BoostMultiplier = 1.3,
@@ -67,6 +75,23 @@ public sealed class AppConfig
                 ["RIGHT_Y_MIN"] = new AxisBinding { Keys = new List<string> { "-" }, Value = "50" },
                 ["RIGHT_Y_MAX"] = new AxisBinding { Keys = new List<string> { "+" }, Value = "50" }
             }
+        };
+    }
+
+    public static string NormalizeKeyBlocking(string? mode)
+    {
+        if (string.IsNullOrWhiteSpace(mode))
+        {
+            return KeyBlockingWhenModifierActive;
+        }
+
+        return mode.Trim().ToLowerInvariant() switch
+        {
+            KeyBlockingAlways => KeyBlockingAlways,
+            KeyBlockingWhenModifierActive => KeyBlockingWhenModifierActive,
+            KeyBlockingDisabled => KeyBlockingDisabled,
+            "disable" => KeyBlockingDisabled,
+            _ => KeyBlockingWhenModifierActive
         };
     }
 }
@@ -154,6 +179,7 @@ public sealed class ConfigStore
     private static void Normalize(AppConfig cfg)
     {
         var defaults = AppConfig.CreateDefault();
+        cfg.KeyBlocking = AppConfig.NormalizeKeyBlocking(cfg.KeyBlocking);
 
         foreach (var key in defaults.Buttons.Keys)
         {

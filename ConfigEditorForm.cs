@@ -11,6 +11,7 @@ public sealed class ConfigEditorForm : Form
     private AppConfig _config;
 
     private readonly CheckBox _holdControl = new() { AutoSize = true, Text = "Enable Hold/Cruise Control" };
+    private readonly ComboBox _keyBlocking = new() { Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly TextBox _modifier = new() { ReadOnly = true, Width = 170 };
     private readonly TextBox _boost = new() { ReadOnly = true, Width = 170 };
     private readonly TextBox _multiplier = new() { Width = 170 };
@@ -65,11 +66,21 @@ public sealed class ConfigEditorForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         KeyPreview = true;
 
+        InitializeKeyBlockingOptions();
         BuildLayout();
         ApplyConfigToControls(_config);
 
         KeyDown += OnCaptureKeyDown;
         _captureTimer.Tick += (_, _) => EndCaptureByTimeout();
+    }
+
+    private void InitializeKeyBlockingOptions()
+    {
+        _keyBlocking.Items.Clear();
+        _keyBlocking.Items.Add(AppConfig.KeyBlockingAlways);
+        _keyBlocking.Items.Add(AppConfig.KeyBlockingWhenModifierActive);
+        _keyBlocking.Items.Add(AppConfig.KeyBlockingDisabled);
+        _keyBlocking.SelectedItem = AppConfig.KeyBlockingWhenModifierActive;
     }
 
     private void BuildLayout()
@@ -127,14 +138,17 @@ public sealed class ConfigEditorForm : Form
         panel.Controls.Add(_holdControl, 0, 0);
         panel.SetColumnSpan(_holdControl, 3);
 
-        panel.Controls.Add(new Label { Text = "Modifier (Kopling) Key:", AutoSize = true }, 0, 1);
-        panel.Controls.Add(WrapCaptureButtons(_modifier), 1, 1);
+        panel.Controls.Add(new Label { Text = "Key Blocking:", AutoSize = true }, 0, 1);
+        panel.Controls.Add(_keyBlocking, 1, 1);
 
-        panel.Controls.Add(new Label { Text = "Boost (Turbo) Key:", AutoSize = true }, 0, 2);
-        panel.Controls.Add(WrapCaptureButtons(_boost), 1, 2);
+        panel.Controls.Add(new Label { Text = "Modifier (Kopling) Key:", AutoSize = true }, 0, 2);
+        panel.Controls.Add(WrapCaptureButtons(_modifier), 1, 2);
 
-        panel.Controls.Add(new Label { Text = "Boost Multiplier (e.g. 1.5):", AutoSize = true }, 0, 3);
-        panel.Controls.Add(_multiplier, 1, 3);
+        panel.Controls.Add(new Label { Text = "Boost (Turbo) Key:", AutoSize = true }, 0, 3);
+        panel.Controls.Add(WrapCaptureButtons(_boost), 1, 3);
+
+        panel.Controls.Add(new Label { Text = "Boost Multiplier (e.g. 1.5):", AutoSize = true }, 0, 4);
+        panel.Controls.Add(_multiplier, 1, 4);
 
         tab.Controls.Add(panel);
         return tab;
@@ -397,6 +411,7 @@ public sealed class ConfigEditorForm : Form
     {
         _config = config;
         _holdControl.Checked = config.HoldControl;
+        _keyBlocking.SelectedItem = AppConfig.NormalizeKeyBlocking(config.KeyBlocking);
         _modifier.Text = config.ModifierKey ?? string.Empty;
         _boost.Text = config.BoostKey ?? string.Empty;
         _multiplier.Text = config.BoostMultiplier.ToString("0.###");
@@ -432,6 +447,7 @@ public sealed class ConfigEditorForm : Form
     {
         var cfg = AppConfig.CreateDefault();
         cfg.HoldControl = _holdControl.Checked;
+        cfg.KeyBlocking = AppConfig.NormalizeKeyBlocking(_keyBlocking.SelectedItem?.ToString());
         cfg.ModifierKey = _modifier.Text.Trim();
         cfg.BoostKey = _boost.Text.Trim();
 
