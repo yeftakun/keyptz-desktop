@@ -1,6 +1,185 @@
+using System.Diagnostics;
+using System.Globalization;
 using Newtonsoft.Json;
 
 namespace Key2Xbox.Rewrite;
+
+public sealed class ConfigValidationResult
+{
+    public List<string> Errors { get; } = new();
+    public List<string> Warnings { get; } = new();
+
+    public bool HasErrors => Errors.Count > 0;
+    public bool HasWarnings => Warnings.Count > 0;
+    public bool HasIssues => HasErrors || HasWarnings;
+}
+
+public sealed class ConfigLoadResult
+{
+    public ConfigLoadResult(AppConfig config, ConfigValidationResult validation)
+    {
+        Config = config;
+        Validation = validation;
+    }
+
+    public AppConfig Config { get; }
+    public ConfigValidationResult Validation { get; }
+}
+
+public static class ConfigValidator
+{
+    public static ConfigValidationResult Validate(AppConfig cfg)
+    {
+        var result = new ConfigValidationResult();
+
+        ValidateSingleKey(cfg.ModifierKey, "modifier_key", result);
+        ValidateSingleKey(cfg.BoostKey, "boost_key", result);
+
+        foreach (var pair in cfg.Buttons.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            ValidateSingleKey(pair.Value, $"buttons.{pair.Key}", result);
+        }
+
+        foreach (var pair in cfg.Triggers.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            ValidateKeyList(pair.Value?.Keys, $"triggers.{pair.Key}.keys", result);
+            ValidatePercentageValue(pair.Value?.Value, $"triggers.{pair.Key}.value", result);
+        }
+
+        foreach (var pair in cfg.Joysticks.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            ValidateKeyList(pair.Value?.Keys, $"joysticks.{pair.Key}.keys", result);
+            ValidatePercentageValue(pair.Value?.Value, $"joysticks.{pair.Key}.value", result);
+        }
+
+        if (cfg.BoostMultiplier <= 0)
+        {
+            result.Warnings.Add("boost_multiplier <= 0. Runtime akan fallback ke 1.0.");
+        }
+
+        AddDuplicateWarnings(cfg, result);
+        return result;
+    }
+
+    private static void ValidateSingleKey(string? keyText, string fieldName, ConfigValidationResult result)
+    {
+        if (string.IsNullOrWhiteSpace(keyText))
+        {
+            return;
+        }
+
+        foreach (var token in KeyboardInput.SplitKeys(keyText))
+        {
+            if (KeyboardInput.ParseConfiguredKeys(token).Count == 0)
+            {
+                result.Errors.Add($"'{fieldName}' berisi key tidak dikenal: '{token}'.");
+            }
+        }
+    }
+
+    private static void ValidateKeyList(IEnumerable<string>? keys, string fieldName, ConfigValidationResult result)
+    {
+        if (keys is null)
+        {
+            result.Warnings.Add($"'{fieldName}' kosong/null. Default key list akan dipakai.");
+            return;
+        }
+
+        foreach (var keyText in keys)
+        {
+            ValidateSingleKey(keyText, fieldName, result);
+        }
+    }
+
+    private static void ValidatePercentageValue(string? valueText, string fieldName, ConfigValidationResult result)
+    {
+        if (string.IsNullOrWhiteSpace(valueText))
+        {
+            result.Warnings.Add($"'{fieldName}' kosong. Runtime akan pakai nilai maksimal axis/trigger.");
+            return;
+        }
+
+        var normalized = valueText.Replace("%", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+
+        if (!double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) &&
+            !double.TryParse(normalized, NumberStyles.Float, CultureInfo.CurrentCulture, out value))
+        {
+            result.Errors.Add($"'{fieldName}' bukan angka valid: '{valueText}'.");
+            return;
+        }
+
+        if (value < 0 || value > 100)
+        {
+            result.Warnings.Add($"'{fieldName}' di luar rentang 0-100 dan akan di-clamp saat runtime: '{valueText}'.");
+        }
+    }
+
+    private static void AddDuplicateWarnings(AppConfig cfg, ConfigValidationResult result)
+    {
+        var usage = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+        static void AddUsage(Dictionary<string, HashSet<string>> map, string token, string source)
+        {
+            if (!map.TryGetValue(token, out var sources))
+            {
+                sources = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                map[token] = sources;
+            }
+
+            sources.Add(source);
+        }
+
+        void AddSingle(string? text, string source)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            foreach (var token in KeyboardInput.SplitKeys(text))
+            {
+                AddUsage(usage, token.Trim().ToLowerInvariant(), source);
+            }
+        }
+
+        void AddList(IEnumerable<string>? list, string source)
+        {
+            if (list is null)
+            {
+                return;
+            }
+
+            foreach (var entry in list)
+            {
+                AddSingle(entry, source);
+            }
+        }
+
+        AddSingle(cfg.ModifierKey, "modifier_key");
+        AddSingle(cfg.BoostKey, "boost_key");
+
+        foreach (var pair in cfg.Buttons)
+        {
+            AddSingle(pair.Value, $"buttons.{pair.Key}");
+        }
+
+        foreach (var pair in cfg.Triggers)
+        {
+            AddList(pair.Value?.Keys, $"triggers.{pair.Key}.keys");
+        }
+
+        foreach (var pair in cfg.Joysticks)
+        {
+            AddList(pair.Value?.Keys, $"joysticks.{pair.Key}.keys");
+        }
+
+        foreach (var pair in usage.Where(p => p.Value.Count > 1).OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var sources = string.Join(", ", pair.Value.OrderBy(v => v, StringComparer.OrdinalIgnoreCase));
+            result.Warnings.Add($"Key '{pair.Key}' dipakai di beberapa mapping: {sources}.");
+        }
+    }
+}
 
 public sealed class AppConfig
 {
@@ -136,22 +315,29 @@ public sealed class ConfigStore
 
     public AppConfig EnsureAndLoad()
     {
+        return EnsureAndLoadValidated().Config;
+    }
+
+    public ConfigLoadResult EnsureAndLoadValidated()
+    {
         if (!File.Exists(_paths.ConfigPath))
         {
             var defaultConfig = AppConfig.CreateDefault();
             Save(defaultConfig);
-            return defaultConfig;
+            return new ConfigLoadResult(defaultConfig, ConfigValidator.Validate(defaultConfig));
         }
 
-        return Load();
+        return LoadValidated();
     }
 
     public AppConfig Load()
     {
-        var text = File.ReadAllText(_paths.ConfigPath);
-        var cfg = JsonConvert.DeserializeObject<AppConfig>(text) ?? AppConfig.CreateDefault();
-        Normalize(cfg);
-        return cfg;
+        return LoadValidated().Config;
+    }
+
+    public ConfigLoadResult LoadValidated()
+    {
+        return LoadFileValidated(_paths.ConfigPath, "config.json");
     }
 
     public void Save(AppConfig config)
@@ -163,10 +349,12 @@ public sealed class ConfigStore
 
     public AppConfig LoadProfile(string profileFile)
     {
-        var text = File.ReadAllText(profileFile);
-        var cfg = JsonConvert.DeserializeObject<AppConfig>(text) ?? AppConfig.CreateDefault();
-        Normalize(cfg);
-        return cfg;
+        return LoadProfileValidated(profileFile).Config;
+    }
+
+    public ConfigLoadResult LoadProfileValidated(string profileFile)
+    {
+        return LoadFileValidated(profileFile, Path.GetFileName(profileFile));
     }
 
     public void SaveProfile(string profileFile, AppConfig config)
@@ -176,9 +364,66 @@ public sealed class ConfigStore
         File.WriteAllText(profileFile, text);
     }
 
+    private ConfigLoadResult LoadFileValidated(string filePath, string sourceName)
+    {
+        var validation = new ConfigValidationResult();
+        AppConfig cfg;
+
+        try
+        {
+            var text = File.ReadAllText(filePath);
+            cfg = JsonConvert.DeserializeObject<AppConfig>(text) ?? AppConfig.CreateDefault();
+        }
+        catch (JsonException ex)
+        {
+            cfg = AppConfig.CreateDefault();
+            validation.Errors.Add($"Format JSON '{sourceName}' tidak valid. Fallback ke default. Detail: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            cfg = AppConfig.CreateDefault();
+            validation.Errors.Add($"Gagal membaca '{sourceName}'. Fallback ke default. Detail: {ex.Message}");
+        }
+
+        Normalize(cfg);
+        MergeValidation(validation, ConfigValidator.Validate(cfg));
+        LogValidation(sourceName, validation);
+
+        return new ConfigLoadResult(cfg, validation);
+    }
+
+    private static void MergeValidation(ConfigValidationResult target, ConfigValidationResult source)
+    {
+        target.Errors.AddRange(source.Errors);
+        target.Warnings.AddRange(source.Warnings);
+    }
+
+    private static void LogValidation(string sourceName, ConfigValidationResult validation)
+    {
+        if (!validation.HasIssues)
+        {
+            return;
+        }
+
+        foreach (var error in validation.Errors)
+        {
+            Debug.WriteLine($"[ConfigValidation][{sourceName}][ERROR] {error}");
+        }
+
+        foreach (var warning in validation.Warnings)
+        {
+            Debug.WriteLine($"[ConfigValidation][{sourceName}][WARN] {warning}");
+        }
+    }
+
     private static void Normalize(AppConfig cfg)
     {
         var defaults = AppConfig.CreateDefault();
+
+        cfg.Buttons ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        cfg.Triggers ??= new Dictionary<string, AxisBinding>(StringComparer.OrdinalIgnoreCase);
+        cfg.Joysticks ??= new Dictionary<string, AxisBinding>(StringComparer.OrdinalIgnoreCase);
+
         cfg.KeyBlocking = AppConfig.NormalizeKeyBlocking(cfg.KeyBlocking);
 
         foreach (var key in defaults.Buttons.Keys)
@@ -187,30 +432,38 @@ public sealed class ConfigStore
             {
                 cfg.Buttons[key] = defaults.Buttons[key];
             }
+            else if (cfg.Buttons[key] is null)
+            {
+                cfg.Buttons[key] = string.Empty;
+            }
         }
 
         foreach (var key in defaults.Triggers.Keys)
         {
-            if (!cfg.Triggers.ContainsKey(key))
+            if (!cfg.Triggers.ContainsKey(key) || cfg.Triggers[key] is null)
             {
                 cfg.Triggers[key] = defaults.Triggers[key];
             }
-            else if (cfg.Triggers[key].Keys.Count == 0)
+            else if (cfg.Triggers[key].Keys is null || cfg.Triggers[key].Keys.Count == 0)
             {
                 cfg.Triggers[key].Keys = new List<string> { "" };
             }
+
+            cfg.Triggers[key].Value ??= defaults.Triggers[key].Value;
         }
 
         foreach (var key in defaults.Joysticks.Keys)
         {
-            if (!cfg.Joysticks.ContainsKey(key))
+            if (!cfg.Joysticks.ContainsKey(key) || cfg.Joysticks[key] is null)
             {
                 cfg.Joysticks[key] = defaults.Joysticks[key];
             }
-            else if (cfg.Joysticks[key].Keys.Count == 0)
+            else if (cfg.Joysticks[key].Keys is null || cfg.Joysticks[key].Keys.Count == 0)
             {
                 cfg.Joysticks[key].Keys = new List<string> { "" };
             }
+
+            cfg.Joysticks[key].Value ??= defaults.Joysticks[key].Value;
         }
     }
 }

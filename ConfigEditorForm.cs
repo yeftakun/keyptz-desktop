@@ -54,7 +54,8 @@ public sealed class ConfigEditorForm : Form
     {
         _store = store;
         _paths = paths;
-        _config = _store.EnsureAndLoad();
+        var initialLoad = _store.EnsureAndLoadValidated();
+        _config = initialLoad.Config;
 
         Text = "KeyPTZ - Config & Profile Editor";
         Width = 760;
@@ -71,6 +72,7 @@ public sealed class ConfigEditorForm : Form
         InitializeKeyBlockingOptions();
         BuildLayout();
         ApplyConfigToControls(_config);
+        ShowValidationDialog("config.json", initialLoad.Validation, "Config utama tetap dimuat ke editor. Silakan koreksi jika ada issue.");
 
         KeyDown += OnCaptureKeyDown;
         _captureTimer.Tick += (_, _) => EndCaptureByTimeout();
@@ -431,6 +433,51 @@ public sealed class ConfigEditorForm : Form
         };
     }
 
+    private static void ShowValidationDialog(string sourceName, ConfigValidationResult validation, string? footer = null)
+    {
+        if (!validation.HasIssues)
+        {
+            return;
+        }
+
+        var lines = new List<string>
+        {
+            $"Hasil validasi untuk '{sourceName}':"
+        };
+
+        if (validation.HasErrors)
+        {
+            lines.Add(string.Empty);
+            lines.Add("Error:");
+            foreach (var error in validation.Errors)
+            {
+                lines.Add($"- {error}");
+            }
+        }
+
+        if (validation.HasWarnings)
+        {
+            lines.Add(string.Empty);
+            lines.Add("Warning:");
+            foreach (var warning in validation.Warnings)
+            {
+                lines.Add($"- {warning}");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(footer))
+        {
+            lines.Add(string.Empty);
+            lines.Add(footer);
+        }
+
+        MessageBox.Show(
+            string.Join(Environment.NewLine, lines),
+            validation.HasErrors ? "Validasi Config - Error" : "Validasi Config - Warning",
+            MessageBoxButtons.OK,
+            validation.HasErrors ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+    }
+
     private static void ApplyButtonStyle(Button button)
     {
         var wasAutoSize = button.AutoSize;
@@ -689,8 +736,15 @@ public sealed class ConfigEditorForm : Form
 
         var profileName = _profiles.SelectedItem.ToString() ?? string.Empty;
         var path = Path.Combine(_paths.ProfileDirectory, profileName);
-        var cfg = _store.LoadProfile(path);
-        ApplyConfigToControls(cfg);
+        var result = _store.LoadProfileValidated(path);
+        ApplyConfigToControls(result.Config);
+
+        if (result.Validation.HasIssues)
+        {
+            ShowValidationDialog(profileName, result.Validation, "Profile tetap dimuat ke editor. Klik Save & Apply setelah perbaikan.");
+            return;
+        }
+
         MessageBox.Show($"'{profileName}' telah dimuat ke editor. Klik Save & Apply untuk mengaktifkannya.", "Dimuat", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
