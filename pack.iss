@@ -1,5 +1,5 @@
 #define MyAppName "keyPTZ-desktop"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "Yeftakun"
 #define MyAppExeName "keyPTZ-desktop.exe"
 #define MySourceDir "release\win-x64-small-safe"
@@ -17,7 +17,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir=release\installer
-OutputBaseFilename={#MyAppName}-setup
+OutputBaseFilename={#MyAppName}-setup-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
