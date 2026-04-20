@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>keyPTZ-desktop</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --line: #d9dee7;
+      --brand: #0f766e;
+      --brand-hover: #0b5f5a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Tahoma", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #fbfcfd 0%, var(--bg) 100%);
+    }
+
+    .wrap {
+      width: min(760px, 92vw);
+      margin: 40px auto;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.6rem, 3.2vw, 2rem);
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      transition: 140ms ease;
+    }
+
+    .btn-primary {
+      color: #ffffff;
+      background: var(--brand);
+      border: 1px solid var(--brand);
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-hover);
+      border-color: var(--brand-hover);
+    }
+
+    .btn-sub {
+      color: var(--brand);
+      background: #ffffff;
+      border: 1px solid var(--line);
+      font-size: 0.92rem;
+      padding: 8px 12px;
+    }
+
+    .btn-sub:hover {
+      border-color: #b9c2d0;
+      background: #f9fbfc;
+    }
+
+    .section {
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .path {
+      margin-top: 8px;
+      font-family: "Consolas", "Courier New", monospace;
+      background: #f7fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      color: #374151;
+      display: inline-block;
+    }
+
+    footer {
+      margin-top: 14px;
+      color: #768094;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>keyPTZ-desktop</h1>
+      <p>
+        Utilitas kecil untuk mengubah input keyboard menjadi Virtual Xbox 360 Controller
+        agar kontrol kamera PTZ di vMix lebih fleksibel.
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-primary" href="https://github.com/yeftakun/keyptz/releases/tag/v1.1.1" target="_blank" rel="noopener noreferrer">Download v1.1.1</a>
+        <a class="btn btn-sub" href="https://github.com/yeftakun/keyptz/releases" target="_blank" rel="noopener noreferrer">All Release</a>
+      </div>
+
+      <div class="section">
+        <h2>Fitur</h2>
+        <ul>
+          <li>Keyboard mapping ke virtual Xbox 360 controller</li>
+          <li>Dukungan gamepad fisik dan virtual secara bersamaan</li>
+          <li>Modifier key, boost key, dan boost multiplier</li>
+          <li>Hold/Cruise control</li>
+          <li>Editor config dan profile dari tray</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Catatan Penggunaan</h2>
+        <ul>
+          <li>Untuk shortcut kamera PTZ di vMix, set persentase analog dan trigger ke 100%.</li>
+          <li>Jalankan keyPTZ sebelum vMix, dan jangan exit sebelum vMix dimatikan.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Lokasi Data</h2>
+        <p>Data pengguna disimpan di:</p>
+        <div class="path">%LOCALAPPDATA%\keyPTZ-desktop</div>
+      </div>
+    </section>
+
+    <footer>
+      keyPTZ-desktop - utility page
+    </footer>
+  </main>
+</body>
+</html>
