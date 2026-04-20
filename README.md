@@ -1,32 +1,28 @@
 # Key2Xbox.Rewrite (.NET C#)
 
-Rewrite dari project Python ke .NET C# (WinForms + System Tray) dengan fitur setara:
+Dibuat untuk fleksibilitas penggunaan keyboard sebagai pengontrol kamera PTZ di aplikasi vMix. Operator dapat dengan mudah mengubah input keyboard menjadi sinyal Virtual Xbox 360, memungkinkan pergerakan kamera yang lebih fleksibel.
+
+> Rewrite dari [Python](https://github.com/yeftakun/ketPTZ) ke .NET C# (WinForms + System Tray)
 
 - Keyboard mapping ke virtual Xbox 360 controller
 - Dukungan gamepad fisik + virtual secara bersamaan
 - Modifier key, boost key, boost multiplier
 - Hold/Cruise control
-- Hot-reload `config.json`
 - Editor config & profile dari tray
-- Single-instance guard (mutex)
 
-## Build & Run
-
-```powershell
-dotnet build
-cd bin\Debug\net8.0-windows
-dotnet Key2Xbox.Rewrite.dll
-```
 ## Release
 ```powershell
 dotnet publish Key2Xbox.Rewrite.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=false /p:PublishTrimmed=false /p:DebugType=None /p:DebugSymbols=false -o release/win-x64-small-safe
 ```
 
-Saat aplikasi berjalan, gunakan icon tray untuk membuka menu `Config`, `GitHub`, atau `Exit`.
+## Penggunaan
+
+Khusus ketika membuat shortcut xbox untuk kamera PTZ di vmix, set persentase analog & trigger ke 100%.
+
+⚠️Jalankan sebelum vmix; Jangan exit sebelum vmix dimatikan. 
 
 ## File Data
+Folder `%LOCALAPPDATA%\\keyPTZ-desktop`.
 
 - `config.json`
 - `profiles/*.json`
-
-Kedua lokasi ini berada di folder `%LOCALAPPDATA%\\keyPTZ-desktop`.

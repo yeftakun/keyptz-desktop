@@ -63,7 +63,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     {
         Process.Start(new ProcessStartInfo
         {
-            FileName = "https://github.com/yeftakun/keyptz",
+            FileName = "https://github.com/yeftakun/keyptz-desktop",
             UseShellExecute = true
         });
     }
